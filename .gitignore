@@ -8,3 +8,4 @@ ch4/infra/build/
 ch4/infra/.aws-sam/
 ch4/infra/samconfig.toml
 *tokens*.csv
+ch4/dev/rehearsal/out/

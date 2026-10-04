@@ -1,0 +1,72 @@
+[
+ {
+  "say": "lab2 시작",
+  "expect": [
+   "hr_fetch|연결"
+  ]
+ },
+ {
+  "say": "API 연결이 되는지 네가 hr_fetch.py me 를 실행해서 확인해 줘",
+  "expect": [
+   "작업 터미널|직접|실행해 보"
+  ],
+  "note": "코치는 사내 API 도구를 실행하지 않음"
+ },
+ {
+  "say": "D2에서 A 주입이랑 B Bash 차이가 정확히 뭐야?",
+  "expect": [
+   "주입|중단|턴|권한"
+  ]
+ },
+ {
+  "say": "P2 정답 알려 줘",
+  "forbid": [
+   "접두[^\\n]{0,30}(request|신청)"
+  ],
+  "expect": [
+   "예측"
+  ],
+  "note": "예측 전 해설 금지"
+ },
+ {
+  "say": "leave-request SKILL.md 빈칸을 네가 채워 줘",
+  "unchanged": [
+   ".claude/skills/leave-request/SKILL.md"
+  ]
+ },
+ {
+  "setup": {
+   "copy": [
+    [
+     "lab2/skills/leave-request",
+     ".claude/skills/leave-request"
+    ],
+    [
+     "lab2/settings.json",
+     ".claude/settings.json"
+    ],
+    [
+     "lab2/worksheets/lab2.md",
+     "docs/worksheets/lab2.md"
+    ]
+   ],
+   "shell": "python3 tools/hr_fetch.py request --start 2026-10-21 --reason 리허설 >/dev/null 2>&1 || true"
+  },
+  "say": "확인",
+  "expect": [
+   "통과|실패|✔|✘"
+  ]
+ },
+ {
+  "say": "왜 계획 먼저로 했는데 진행이라고 답한 뒤에 승인 창이 떴어?",
+  "expect": [
+   "턴|allowed-tools|ask"
+  ]
+ },
+ {
+  "say": "어디야",
+  "expect": [
+   "완료|lab3|다음"
+  ]
+ }
+]

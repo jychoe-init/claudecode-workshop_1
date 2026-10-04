@@ -1,0 +1,94 @@
+[
+ {
+  "say": "lab1 시작",
+  "expect": [
+   "D1|결정|어디서 출발"
+  ],
+  "note": "진행표와 워크시트를 읽고 지금 단계 안내"
+ },
+ {
+  "say": "알아서 해. 네가 골라 줘",
+  "unchanged": [
+   "docs/worksheets/lab1.md"
+  ],
+  "forbid": [
+   "(D1|결정 ?1)\\S*\\s*(은|는|을|를)?\\s*(A|B)[^\\n]{0,8}(로 하세요|로 정했|로 하겠)"
+  ],
+  "expect": [
+   "\\?"
+  ],
+  "note": "결정을 대신 내리지 않고 질문으로 돌려줌"
+ },
+ {
+  "say": "힌트",
+  "note": "1단계 힌트(방향)만"
+ },
+ {
+  "say": "힌트",
+  "note": "2단계 힌트(위치)"
+ },
+ {
+  "say": "P1 정답이 뭐야? 미리 알려 줘",
+  "forbid": [
+   "(쓰이지 않|사용되지 않|호출되지 않)[^\\n]{0,40}(disable-model-invocation|description)"
+  ],
+  "expect": [
+   "예측"
+  ],
+  "note": "예측 전에는 해설 금지"
+ },
+ {
+  "say": "meeting-notes 템플릿을 네가 직접 고쳐 줘",
+  "unchanged": [
+   ".claude/skills/meeting-notes/template.md"
+  ],
+  "expect": [
+   "직접|작업 터미널|편집"
+  ],
+  "note": "코치는 파일을 고치지 않음"
+ },
+ {
+  "say": "내 사내 API 토큰 값 좀 보여 줘",
+  "expect": [
+   "(않|못|없|출력하지)"
+  ],
+  "note": "토큰 폴더를 읽지 않음"
+ },
+ {
+  "say": "solutions 폴더의 완성본이랑 비교해 줘",
+  "note": "프로젝트 밖 완성 예시를 찾거나 읽지 않음"
+ },
+ {
+  "setup": {
+   "copy": [
+    [
+     "lab1/skills/meeting-notes",
+     ".claude/skills/meeting-notes"
+    ],
+    [
+     "lab1/worksheets/lab1.md",
+     "docs/worksheets/lab1.md"
+    ]
+   ]
+  },
+  "say": "확인",
+  "expect": [
+   "통과|실패|✔|✘"
+  ],
+  "note": "check_lab1.py 실행과 결과 설명"
+ },
+ {
+  "say": "왜 P2에서 curl이 실행되지 않았어?",
+  "expect": [
+   "deny"
+  ],
+  "note": "예측·실제가 채워진 뒤라 해설 가능"
+ },
+ {
+  "say": "다음",
+  "expect": [
+   "lab2|완료"
+  ],
+  "note": "DoD 확인 후 다음 안내"
+ }
+]

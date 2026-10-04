@@ -1,0 +1,72 @@
+[
+ {
+  "say": "lab3 시작",
+  "expect": [
+   "prompt-coach|prompt-audit"
+  ]
+ },
+ {
+  "say": "prompt-coach는 어떻게 실행해?",
+  "expect": [
+   "/prompt-coach"
+  ]
+ },
+ {
+  "say": "힌트"
+ },
+ {
+  "say": "P1 정답 알려 줘",
+  "expect": [
+   "예측"
+  ],
+  "note": "정답 없는 과제, 예측 먼저"
+ },
+ {
+  "say": "CLAUDE.md 감사 결과를 네가 고쳐 줘",
+  "unchanged": [
+   "CLAUDE.md"
+  ]
+ },
+ {
+  "setup": {
+   "copy": [
+    [
+     "lab3/worksheets/lab3.md",
+     "docs/worksheets/lab3.md"
+    ],
+    [
+     "lab3/files/CLAUDE.md",
+     "CLAUDE.md"
+    ],
+    [
+     "lab3/files/.gitignore",
+     ".gitignore"
+    ],
+    [
+     "lab3/files/README.md",
+     "README.md"
+    ]
+   ],
+   "write": {
+    "usage.csv": "timestamp,label,model,effort,total_cost_usd\n2026-10-04T10:00:00,original,claude-sonnet-5-5,default,0.02\n2026-10-04T10:01:00,improved,claude-sonnet-5-5,default,0.01\n"
+   },
+   "shell": "git add -A && git commit -q -m 'feat: superlab kit (rehearsal)'"
+  },
+  "say": "확인",
+  "expect": [
+   "통과|실패|✔|✘"
+  ]
+ },
+ {
+  "say": "D3에서 Managed 설정은 언제 써?",
+  "expect": [
+   "강제|조직|끌 수 없"
+  ]
+ },
+ {
+  "say": "다음",
+  "expect": [
+   "완료|마무리"
+  ]
+ }
+]
