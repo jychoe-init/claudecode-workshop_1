@@ -1,48 +1,62 @@
-# Chapter 4 슈퍼랩 · Team Starter Kit
+# Chapter 4 슈퍼랩
 
-Part B 슈퍼랩(53분)에서 쓰는 킷입니다. 실습 순서와 설명은 워크샵 핸드북 Chapter 4를 따릅니다.
+Part B 슈퍼랩(66분)에서 쓰는 자료입니다. 진행 순서와 설명은 워크샵 핸드북 Chapter 4를 따릅니다.
 
-```bash
-bash setup.sh            # ~/claude-lab/superlab 생성
-cd ~/claude-lab/superlab
-claude
-```
-
-## setup.sh가 만드는 것
-
-| 항목 | 내용 |
-|---|---|
-| git 저장소 | 기본 브랜치 `main`, 오늘 날짜 커밋 2개 |
-| `feature/greeting-i18n` | 개발 트랙용 변경 2개 (`main...feature/greeting-i18n` diff) |
-| `.claude/settings.local.json` | `defaultMode: acceptEdits` · 개인 파일, 커밋하지 않음 |
-| `.env` | 가짜 토큰 · 커밋하지 않음 |
-
-## 킷 구성과 사용 블록
-
-| 경로 | 블록 | 용도 |
+| 구간 | 시간 | 만드는 것 |
 |---|---|---|
-| `presets/personal.json` `team.json` `regulated.json` | 1 울타리 ① | `claude --settings presets/<이름>.json`으로 같은 요청의 허용·승인·차단 비교 |
-| `CLAUDE.md`, `.claude/rules/code-style.md` | 1 울타리 ② | `/doctor prompt-audit` 대상 |
-| `.claude/skills/standup/` | 2 연결 ③ | Stop http 훅을 붙일 스킬 |
-| `tools/slack_mock.py` | 2 연결 ③ | http 훅 수신기, `--forward`로 실제 Slack 전달 |
-| `tools/hr_mcp.py` | 2 연결 ④ | 가짜 HR MCP 서버 (stdio), `HR_STRICT=1`로 서버 쪽 승인 강제 |
-| `.claude/skills/prompt-coach/`, `samples/prompt-worksheet.md` | 3 반복작업 ⑤ | 요청문 진단 |
-| `.github/pull_request_template.md` | 3 반복작업 ⑥ 개발 트랙 | `/pr-desc` 템플릿 |
-| `samples/meeting_transcript.txt` `weekly_notes.md` `weekly_template.md` | 3 반복작업 ⑦ 업무 트랙 | 회의록·주간보고 입력 |
-| `tools/usage_log.sh` | 4 점검·배포 ⑧ | `-p` 실행 비용·토큰을 `usage.csv`에 기록 |
+| 준비 | 5 | 실습 프로젝트, 토큰 등록 |
+| lab1 반복작업 | 20 | 우리 팀 양식의 문서 스킬 |
+| lab2 연결 | 20 | 사내 API를 부르는 업무 자동화 스킬 |
+| lab3 프롬프트 점검·배포 | 18 | 모델에 맞게 고친 프롬프트, 감사한 지시문, 커밋한 킷 |
+| 마무리 | 3 | 체크리스트 |
 
-## 실습 중 생기는 파일 (커밋 전에 .gitignore 대상)
-
-`.claude/settings.local.json`, `.env`, `.slack_inbox.jsonl`, `.hr_requests.json`, `usage.csv`, `.usage/`
-
-## 도구 단독 점검
+## 참가자
 
 ```bash
-# Slack mock: 다른 터미널에서 실행 후 아래로 확인
-python3 tools/slack_mock.py
-python3 -c 'import json,urllib.request as u; u.urlopen(u.Request("http://localhost:8787/", json.dumps({"hook_event_name":"Stop","last_assistant_message":"### 어제\n- 테스트"}).encode(), {"Content-Type":"application/json"}))'
-
-# HR MCP: 초기화와 도구 목록 응답 확인
-printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}' \
-              '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | python3 tools/hr_mcp.py
+git clone https://github.com/jychoe-init/claudecode-workshop_1.git ~/claude-lab/claudecode-workshop_1
+bash ~/claude-lab/claudecode-workshop_1/ch4/setup.sh     # 토큰을 물으면 강사에게 받은 값을 붙여 넣기
+cd ~/claude-lab/superlab
 ```
+
+화면은 셋으로 씁니다.
+
+| 화면 | 명령 | 용도 |
+|---|---|---|
+| 터미널 1 | `claude` | 작업 |
+| 터미널 2 | `bin/lab coach lab1` | 코치 (읽기 전용, 힌트·확인·왜·다음·어디야) |
+| 편집기 | `docs/worksheets/lab1.md` | 결정, 예측, 직접 작성 |
+
+토큰만 다시 등록: `bash ~/claude-lab/claudecode-workshop_1/ch4/setup.sh --token`
+클라우드에 연결되지 않으면: `bash .../setup.sh --token --local` 후 터미널 하나 더 열어 `bin/lab server`
+
+## 폴더
+
+| 경로 | 내용 | 참가자 프로젝트에 복사 |
+|---|---|---|
+| `setup.sh` | 프로젝트 생성, 토큰 등록, 연결 확인 | — |
+| `kit/` | 참가자 프로젝트 원본 | ○ |
+| `lab-api.env` | 클라우드 사내 API 주소 (`infra/deploy.sh`가 채움) | — |
+| `solutions/` | 완성 예시 (강사 폴백) | ✕ |
+| `infra/` | 사내 API 스택 (Lambda, DynamoDB) | ✕ |
+| `dev/` | 설계 문서, 킷 검증, 리허설 스크립트 | ✕ |
+
+## 킷 구성
+
+| 경로 | 랩 | 용도 |
+|---|---|---|
+| `.claude/skills/meeting-notes`, `weekly-report`, `standup` | lab1 | 변형 출발점 (`<!-- 바꿀 곳 -->` 표시) |
+| `docs/templates/new-skill/` | lab1 | 새 스킬 틀 (6칸) |
+| `samples/meeting_transcript.txt`, `meeting_tricky.txt`, `weekly_notes.md` | lab1 | 입력 샘플 (섞인 지시문 포함) |
+| `.claude/skills/leave-request`, `deploy-report` | lab2 | 자동화 뼈대 (`____` 빈칸) |
+| `tools/hr_fetch.py`, `tools/lab_mcp.py`, `tools/lab_server.py`, `labapi/` | lab2 | 사내 API 스크립트, MCP 서버, 로컬 서버 |
+| `.claude/skills/prompt-coach/` | lab3 | 모델별 프롬프트 점검 (공식 문서 근거) |
+| `samples/prompts.md`, `CLAUDE.md`(결함 3종), `tools/usage_log.sh` | lab3 | 점검·감사·측정 대상 |
+| `.claude/agents/workshop-coach.md`, `bin/lab`, `docs/coach/`, `docs/worksheets/` | 전체 | 코치와 워크시트 |
+| `tools/check_lab1.py` ~ `check_lab3.py` | 전체 | 구조 검사 |
+
+## 강사
+
+- 사내 API 배포·토큰·삭제: [`infra/README.md`](infra/README.md)
+- 설계 기준: [`dev/DESIGN.md`](dev/DESIGN.md)
+- 킷 검증 (로그인 불필요): `python3 ch4/dev/validate_kit.py`
+- 리허설: [`dev/REHEARSAL.md`](dev/REHEARSAL.md)

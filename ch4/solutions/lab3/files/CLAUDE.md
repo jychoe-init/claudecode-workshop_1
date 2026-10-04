@@ -14,18 +14,16 @@
 ## 명령
 
 - 전체 테스트: `npm test`
-- 단위 테스트만 빠르게: `npm run test:unit`
 - 랩 검사: `python3 tools/check_lab1.py` (2, 3도 같은 형식)
 
 ## 응답 방식
 
-- IMPORTANT: 모든 답변을 시작하기 전에 반드시 `<thinking></thinking>` 태그 안에 단계별 추론을 먼저 적으세요. 이 단계는 절대로 건너뛰지 마세요 (CRITICAL).
 - 답변은 한국어로 작성합니다.
 
 ## 코드 스타일
 
-- 들여쓰기는 탭(Tab)을 사용합니다.
 - 문자열은 큰따옴표를 사용합니다.
+- 들여쓰기와 세미콜론은 `.claude/rules/code-style.md`를 따릅니다.
 
 ## 보안
 

@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# 슈퍼랩 보조 명령
+#
+#   bin/lab coach [lab1|lab2|lab3]   코치 세션 (읽기 전용, 터미널 2에서)
+#   bin/lab check 1|2|3              랩 검사 스크립트 실행
+#   bin/lab server [옵션]            로컬 사내 API 서버 (클라우드에 연결되지 않을 때)
+#
+# 작업 세션은 그냥 `claude`로 엽니다.
+
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+usage() { sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'; }
+
+case "${1:-}" in
+  coach)
+    shift
+    first="어디야"
+    if [ -n "${1:-}" ]; then first="$1 시작"; fi
+    command -v claude >/dev/null 2>&1 || { echo "claude 명령을 찾을 수 없습니다" >&2; exit 1; }
+    # 코치 울타리는 문장이 아니라 설정으로 겁니다.
+    #   --agent workshop-coach      도구는 Read, Grep, Glob, Bash만
+    #   --permission-mode dontAsk   허용 목록 밖의 명령은 묻지 않고 거부
+    #   --strict-mcp-config         MCP 서버 없음 (사내 API 쓰기 도구를 부를 수 없음)
+    #   --disallowedTools           편집 도구와 사내 API 실행을 한 번 더 차단
+    # 프롬프트를 먼저 두는 이유: --disallowedTools는 값을 여러 개 받으므로 맨 뒤에 둡니다.
+    exec claude "$first" \
+      --agent workshop-coach \
+      --permission-mode dontAsk \
+      --strict-mcp-config \
+      --disallowedTools Edit Write NotebookEdit \
+        "Bash(python3 tools/hr_fetch.py *)" \
+        "Bash(python3 tools/lab_mcp.py *)" \
+        "Bash(python3 tools/lab_server.py *)"
+    ;;
+  check)
+    n="${2:-}"
+    case "$n" in 1|2|3) exec python3 "tools/check_lab$n.py" ;; *) usage; exit 2 ;; esac
+    ;;
+  server)
+    shift
+    exec python3 tools/lab_server.py "$@"
+    ;;
+  ""|-h|--help|help)
+    usage
+    ;;
+  *)
+    echo "알 수 없는 명령: $1" >&2
+    usage
+    exit 2
+    ;;
+esac

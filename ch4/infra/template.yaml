@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Claude Code workshop Ch4 superlab - lab API (fake HR and deploy data)
+
+Parameters:
+  TokenSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 16
+    Description: HMAC secret for participant tokens (issue_tokens.py uses the same value)
+  RateLimitPerMinute:
+    Type: Number
+    Default: 60
+  BudgetEmail:
+    Type: String
+    Default: ""
+    Description: Optional. Email for the monthly budget alert
+  BudgetLimitUsd:
+    Type: Number
+    Default: 20
+  ReservedConcurrency:
+    Type: Number
+    Default: 0
+    Description: 0 means no reservation. Set e.g. 20 if the account's concurrency limit allows it
+
+Conditions:
+  HasBudget: !Not [!Equals [!Ref BudgetEmail, ""]]
+  HasReserved: !Not [!Equals [!Ref ReservedConcurrency, 0]]
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+        - { AttributeName: sk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+        - { AttributeName: sk, KeyType: RANGE }
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+
+  LabApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: build/
+      Handler: handler.lambda_handler
+      Runtime: python3.12
+      Architectures: [arm64]
+      MemorySize: 256
+      Timeout: 10
+      ReservedConcurrentExecutions: !If [HasReserved, !Ref ReservedConcurrency, !Ref AWS::NoValue]
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Table
+          LAB_TOKEN_SECRET: !Ref TokenSecret
+          RATE_LIMIT_PER_MINUTE: !Ref RateLimitPerMinute
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Table
+
+  LabApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${LabApiFunction}
+      RetentionInDays: 7
+
+  LabApiUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt LabApiFunction.Arn
+      AuthType: NONE
+
+  # 2025-10 이후 새 Function URL은 두 권한이 모두 필요합니다.
+  LabApiUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LabApiFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  LabApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LabApiFunction
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Condition: HasBudget
+    Properties:
+      Budget:
+        BudgetName: !Sub ${AWS::StackName}-monthly
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: { Amount: !Ref BudgetLimitUsd, Unit: USD }
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+          Subscribers:
+            - { SubscriptionType: EMAIL, Address: !Ref BudgetEmail }
+
+Outputs:
+  ApiBase:
+    Description: LAB_API_BASE for participants (trailing slash removed by clients)
+    Value: !GetAtt LabApiUrl.FunctionUrl
+  TableName:
+    Value: !Ref Table

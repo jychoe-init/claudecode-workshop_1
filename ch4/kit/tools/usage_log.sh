@@ -3,27 +3,49 @@
 # 훅 입력에는 토큰·비용 필드가 없으므로, -p --output-format json 의 결과를 사용합니다.
 #
 # 사용법
-#   tools/usage_log.sh <라벨> "<프롬프트>" ['<--settings 로 넘길 JSON 또는 파일 경로>']
+#   tools/usage_log.sh [-m 모델] [-e effort] <라벨> "<프롬프트>" ['<--settings 로 넘길 JSON 또는 파일 경로>']
 #
-# 예: 스킬을 켠 상태와 끈 상태 비교 (skillOverrides)
-#   tools/usage_log.sh notes-on  "samples/meeting_transcript.txt 를 회의록으로 정리해 줘"
-#   tools/usage_log.sh notes-off "samples/meeting_transcript.txt 를 회의록으로 정리해 줘" \
-#     '{"skillOverrides":{"meeting-notes":"off"}}'
+#   -m  opus-5-5 | sonnet-5-5 | haiku-4-5 | fable-5-1 또는 모델 ID 그대로 (생략하면 기본 모델)
+#   -e  low | medium | high | xhigh | max (생략하면 모델 기본값, 지원 단계는 모델마다 다름)
+#
+# 예: lab3 원본과 개선본 비교 (같은 모델로)
+#   tools/usage_log.sh -m sonnet-5-5 original "$(cat my_prompt_original.txt)"
+#   tools/usage_log.sh -m sonnet-5-5 improved "$(cat my_prompt_improved.txt)"
 #
 # 결과
-#   usage.csv           실행마다 1줄 (비용, 토큰, 턴 수, 소요 시간, 권한 거부 수)
+#   usage.csv           실행마다 1줄 (모델, effort, 비용, 토큰, 턴 수, 소요 시간, 권한 거부 수)
 #   .usage/<라벨>.md    응답 본문 (품질 비교용)
 #
 # 주의
 #   -p 실행에서는 승인 요청(ask)이 모두 거부됩니다. 읽기 위주의 프롬프트로 비교하세요.
 #   total_cost_usd 는 목록가 기준 추정치입니다. 구독 플랜에서는 청구액과 다릅니다.
+#   Bedrock 등 다른 제공자는 모델 ID가 다릅니다. -m 에 그 환경의 ID를 그대로 주세요.
 
 set -euo pipefail
 
+model=""
+effort=""
+while getopts "m:e:h" opt; do
+  case "$opt" in
+    m) model="$OPTARG" ;;
+    e) effort="$OPTARG" ;;
+    *) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
 if [ $# -lt 2 ]; then
-  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'
   exit 2
 fi
+
+case "$model" in
+  opus-5-5)   model_id="claude-opus-5-5" ;;
+  sonnet-5-5) model_id="claude-sonnet-5-5" ;;
+  haiku-4-5)  model_id="claude-haiku-4-5-20251001" ;;
+  fable-5-1)  model_id="claude-fable-5-1" ;;
+  *)          model_id="$model" ;;
+esac
 
 label="$1"
 prompt="$2"
@@ -37,18 +59,24 @@ raw="$(mktemp)"
 trap 'rm -f "$raw"' EXIT
 
 args=(-p "$prompt" --output-format json)
+if [ -n "$model_id" ]; then
+  args+=(--model "$model_id")
+fi
+if [ -n "$effort" ]; then
+  args+=(--effort "$effort")
+fi
 if [ -n "$settings" ]; then
   args+=(--settings "$settings")
 fi
 
-echo "실행 중: [$label] ${settings:+(--settings $settings)}" >&2
+echo "실행 중: [$label] ${model_id:+(모델 $model_id) }${effort:+(effort $effort) }${settings:+(--settings $settings)}" >&2
 status=0
 (cd "$root" && claude "${args[@]}") > "$raw" || status=$?
 
-python3 - "$raw" "$root/usage.csv" "$root/.usage/$label.md" "$label" "$status" <<'PY'
+python3 - "$raw" "$root/usage.csv" "$root/.usage/$label.md" "$label" "$status" "${model_id:-default}" "${effort:-default}" <<'PY'
 import csv, datetime, json, os, sys
 
-raw_path, csv_path, md_path, label, status = sys.argv[1:6]
+raw_path, csv_path, md_path, label, status, model, effort = sys.argv[1:8]
 text = open(raw_path, encoding="utf-8", errors="replace").read().strip()
 
 data = {}
@@ -65,6 +93,8 @@ usage = data.get("usage") or {}
 row = {
     "timestamp": datetime.datetime.now().isoformat(timespec="seconds"),
     "label": label,
+    "model": model,
+    "effort": effort,
     "total_cost_usd": data.get("total_cost_usd", ""),
     "input_tokens": usage.get("input_tokens", ""),
     "output_tokens": usage.get("output_tokens", ""),

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "lab": {
+      "command": "python3",
+      "args": ["${CLAUDE_PROJECT_DIR:-.}/tools/lab_mcp.py"]
+    }
+  }
+}
